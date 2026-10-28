@@ -87,6 +87,30 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .done-box{background:var(--soft);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:15px}
 .done-box code{font-size:13px;word-break:break-all}
 .err{color:var(--signal);font-size:14px}
+/* Aufnahme: ganzer Bildschirm, alles ohne Scrollen erreichbar */
+.recview{position:fixed;inset:0;z-index:50;background:#000;display:block;padding:0}
+.recview[hidden]{display:none!important}
+.rframe{position:absolute;inset:0;overflow:hidden;background:#043659;color:#fff}
+.rframe video,.rframe canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rframe .prompter{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 14px) max(18px,env(safe-area-inset-right,0px)) 60px max(18px,env(safe-area-inset-left,0px));background:linear-gradient(rgba(0,0,0,.82) 70%,rgba(0,0,0,0));font-family:var(--body);font-weight:700;font-size:clamp(22px,6.2vw,30px);line-height:1.45;height:38%;overflow:hidden;box-sizing:border-box}
+.prompter .w{color:rgba(255,255,255,.55);padding:0 2px;border-radius:4px}
+.prompter .w.said{color:rgba(255,255,255,.35)}
+.prompter .w.now{color:#04182A;background:#FFD54A}
+.recbar{position:absolute;left:0;right:0;bottom:0;padding:40px max(14px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 14px) max(14px,env(safe-area-inset-left,0px));background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.75) 35%);display:flex;flex-direction:column;gap:10px}
+.rhint{font-size:14px;color:#E4ECF3;text-align:center;margin:0}
+.rrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.rrow.main{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.rrow.main .timer{position:static;justify-self:end}
+.chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+.chip input[type=range]{width:90px}
+.chip input[type=checkbox]{width:18px;height:18px;accent-color:#5DBFB6}
+.recbtn{width:76px;height:76px;border-radius:50%;padding:0;background:transparent;border:4px solid #fff;display:flex;align-items:center;justify-content:center}
+.recbtn span{display:block;width:56px;height:56px;border-radius:50%;background:#E5402F;transition:all .2s}
+.recbtn.on span{width:30px;height:30px;border-radius:6px}
+button.dark{color:#fff;border-color:rgba(255,255,255,.4);justify-self:start}
+.recview .fallback{background:rgba(0,0,0,.6);border-color:rgba(255,255,255,.3);color:#fff}
+.recview .fallback p{font-size:14px;margin:0}
+.rframe .guide{top:52%}
 .build{display:flex;flex-direction:column;gap:8px;font-size:15px}
 .progress{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
 .progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
@@ -139,31 +163,37 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </section>
 
   <!-- STEP 2 -->
-  <section class="step" id="s2" hidden>
-    <h2 id="recTitle">Aufnahme</h2>
-    <p class="muted" id="recHint"></p>
-    <div class="frame" id="recFrame">
+  <section class="step recview" id="s2" hidden>
+    <div class="rframe" id="recFrame">
       <video id="live" class="mirror" playsinline muted autoplay></video>
       <canvas id="pv" width="720" height="1280" hidden></canvas>
       <div class="guide" id="guide" aria-hidden="true"></div>
       <div class="prompter" id="prompter"></div>
       <div class="count" id="count" hidden></div>
-      <div class="timer" id="timer">0:00 / 0:30</div>
-    </div>
-    <div class="ctrl"><label class="lab" for="tempo">Lesetempo</label><input type="range" id="tempo" min="0.8" max="1.25" step="0.05" value="1"><span class="muted" style="font-size:13px">Links langsamer, rechts schneller</span></div>
-    <label class="toggle" id="musicRow"><input type="checkbox" id="musicToggle" checked>Leise Hintergrundmusik</label>
-    <label class="toggle" id="bgToggleRow"><input type="checkbox" id="bgToggle" checked>BDC-Hintergrund statt eigenem Raum</label>
-    <div class="btns" id="photoBtns" hidden>
-      <button id="snapBtn">Foto aufnehmen</button>
-      <button class="sec" id="pickPhoto">Aus Galerie wählen</button>
-      <input type="file" id="photoIn" accept="image/*" hidden>
-    </div>
-    <div class="btns"><button class="rec" id="recBtn">Aufnahme starten</button><button class="sec" id="back1">Zurück</button></div>
-    <p class="err" id="recErr" hidden></p>
-    <div class="fallback" id="fallback" hidden>
-      <b>Kamera hier nicht verfügbar</b>
-      <p class="muted" style="font-size:15px">In dieser Ansicht gibt der Browser die Kamera nicht frei. Über den Testlink im Browser funktioniert die Aufnahme. Hier können Sie ein Beispiel-Reel ohne Stimme erzeugen.</p>
-      <div class="btns"><button class="sec" id="demoBtn">Beispiel-Reel erzeugen</button></div>
+      <div class="recbar">
+        <p class="rhint" id="recHint"></p>
+        <div class="fallback" id="fallback" hidden>
+          <b>Kamera hier nicht verfügbar</b>
+          <p>In dieser Ansicht gibt der Browser die Kamera nicht frei. Hier können Sie ein Beispiel-Reel ohne Stimme erzeugen.</p>
+          <button class="sec" id="demoBtn">Beispiel-Reel erzeugen</button>
+        </div>
+        <p class="err" id="recErr" hidden></p>
+        <div class="rrow" id="photoBtns" hidden>
+          <button id="snapBtn">Foto aufnehmen</button>
+          <button class="sec" id="pickPhoto">Aus Galerie</button>
+          <input type="file" id="photoIn" accept="image/*" hidden>
+        </div>
+        <div class="rrow opts" id="optsRow">
+          <label class="chip" for="tempo">Tempo <input type="range" id="tempo" min="0.7" max="1.3" step="0.05" value="1"></label>
+          <label class="chip" id="musicRow"><input type="checkbox" id="musicToggle" checked>Musik</label>
+          <label class="chip" id="bgToggleRow"><input type="checkbox" id="bgToggle" checked>BDC-Hintergrund</label>
+        </div>
+        <div class="rrow main">
+          <button class="sec dark" id="back1" aria-label="Zurück">Zurück</button>
+          <button class="recbtn" id="recBtn" aria-label="Aufnahme starten"><span></span></button>
+          <div class="timer" id="timer">0:00 / 0:30</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -246,7 +276,10 @@ const st={mode:"video",len:"30",text:"t1",stream:null,photo:null,final:null,fina
 
 function person(){return{name:$("fName").value.trim()||"Name",fach:$("fFach").value.trim()||"Fach",ort:$("fOrt").value.trim()||"Ort"}}
 function chunks(){return SCRIPTS[st.text].lines(person())}
-function targetSec(){return 28}
+function weightOf(w){return w.length+2+(/[.:?!]$/.test(w)?6:/,$/.test(w)?3:0)}
+function totalWeight(){return chunks().reduce((a,x)=>a+x.t.split(/\s+/).reduce((b,w)=>b+weightOf(w),0),0)}
+function targetSec(){return Math.min(29,totalWeight()/15.5)}
+function maxSec(){return Math.min(34,Math.max(30,readSec()+1.5))}
 function readSec(){return targetSec()/parseFloat($("tempo").value)}
 function esc(s){return s.replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
 
@@ -266,20 +299,24 @@ function show(n){
 }
 
 /* ---------- Teleprompter und Untertitel-Zeitplan ---------- */
-let words=[],tl=[],tlSpeed=1;
+let words=[],wt=[],tl=[];
 function buildTimeline(){
   const c=chunks();const all=[];c.forEach(x=>x.t.split(/\s+/).forEach(w=>all.push(w)));
-  $("prompter").innerHTML=all.map((w,i)=>`<span class="w" data-i="${i}">${esc(w)}</span>`).join(" ");
+  $("prompter").innerHTML=`<div class="ptext">${all.map((w,i)=>`<span class="w" data-i="${i}">${esc(w)}</span>`).join(" ")}</div>`;
   words=[...$("prompter").querySelectorAll(".w")];
-  const per=readSec()/all.length;let i=0;
-  tl=c.map(x=>{const n=x.t.split(/\s+/).length;const a=i*per;i+=n;return{...x,a,b:i*per}});
-  $("timer").textContent=`0:00 / 0:30`;
+  const tot=all.reduce((a,w)=>a+weightOf(w),0),k=readSec()/tot;
+  let acc=0;wt=all.map(w=>{const a=acc;acc+=weightOf(w)*k;return a});
+  let i=0;tl=c.map(x=>{const n=x.t.split(/\s+/).length;const a=wt[i];i+=n;return{...x,a,b:i<wt.length?wt[i]:readSec()}});
+  $("prompter").scrollTop=0;
+  $("timer").textContent=`0:00 / 0:${Math.round(maxSec())}`;
 }
+let lastK=-1;
 function prompterAt(sec){
-  const k=Math.floor(Math.max(0,sec)/readSec()*words.length);
-  words.forEach((w,i)=>{w.classList.toggle("said",i<k);w.classList.toggle("now",i===k)});
-  const cur=words[Math.min(k,words.length-1)];
-  if(cur){const box=$("prompter");box.scrollTop=Math.max(0,cur.offsetTop-box.clientHeight*0.3)}
+  let k=0;while(k+1<wt.length&&wt[k+1]<=sec)k++;
+  if(sec<0)k=-1;
+  if(k!==lastK){words.forEach((w,i)=>{w.classList.toggle("said",i<k);w.classList.toggle("now",i===k)});lastK=k}
+  const cur=words[Math.max(0,k)];
+  if(cur){const box=$("prompter");const target=Math.max(0,cur.offsetTop-box.clientHeight*0.28);box.scrollTop+= (target-box.scrollTop)*0.12}
 }
 $("tempo").addEventListener("input",()=>{if(!st.recording)buildTimeline()});
 
@@ -392,15 +429,14 @@ requestAnimationFrame(previewLoop);
 $("toRec").addEventListener("click",async()=>{
   st.mode=document.querySelector("input[name=mode]:checked").value;
   st.text=document.querySelector("input[name=txt]:checked").value;
-  st.photo=null;st.demo=false;st.raw=null;
-  buildTimeline();prompterAt(0);
+  st.photo=null;st.demo=false;st.raw=null;$("optsRow").hidden=false;$("back1").style.visibility="visible";
+  buildTimeline();lastK=-2;prompterAt(-1);
   $("recErr").hidden=true;$("fallback").hidden=true;
   const foto=st.mode==="foto",stimme=st.mode==="stimme",video=st.mode==="video";
-  $("recTitle").textContent=foto?"Foto und Stimme":stimme?"Nur Stimme":"Aufnahme";
-  $("recHint").textContent=foto?"Machen Sie zuerst ein Foto. Dann lesen Sie den Text vor, er läuft oben mit.":stimme?"Ihr Name wird groß eingeblendet. Lesen Sie den Text vor, er läuft oben mit.":"Handy hochkant auf Augenhöhe halten, Gesicht ins Oval. Der Text läuft oben mit, lesen Sie einfach mit.";
+  $("recHint").textContent=foto?"Erst Foto aufnehmen, dann roter Knopf. Der gelb markierte Text zeigt, wo Sie sind.":stimme?"Ihr Name wird groß eingeblendet. Roter Knopf startet, der gelb markierte Text zeigt, wo Sie sind.":"Handy auf Augenhöhe, Gesicht ins Oval. Roter Knopf startet, der gelb markierte Text zeigt, wo Sie sind.";
   $("photoBtns").hidden=!foto;$("bgToggleRow").hidden=stimme;$("snapBtn").textContent="Foto aufnehmen";
   $("live").hidden=stimme;$("pv").hidden=video;$("guide").classList.toggle("off",stimme);
-  $("recBtn").disabled=true;
+  $("recBtn").disabled=true;$("recHint").hidden=false;
   show(2);
   if(!stimme)initSeg();
   prerenderMusic();
@@ -413,7 +449,7 @@ async function startStream(){
   try{
     if(!navigator.mediaDevices?.getUserMedia)throw new Error("none");
     const video=st.mode!=="stimme"?{facingMode:"user",width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30}}:false;
-    st.stream=await navigator.mediaDevices.getUserMedia({video,audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    st.stream=await navigator.mediaDevices.getUserMedia({video,audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
     if(video){$("live").srcObject=st.stream;await $("live").play().catch(()=>{})}
     $("recBtn").disabled=st.mode==="foto";
   }catch(e){
@@ -497,7 +533,7 @@ $("recBtn").addEventListener("click",async()=>{
   const c=$("count");c.hidden=false;
   for(const n of [3,2,1]){c.textContent=n;await new Promise(r=>setTimeout(r,800))}
   c.hidden=true;
-  const max=30;
+  const max=maxSec();
   if(st.demo){st.raw=null;st.rawKind=null;st.recDur=targetSec();build();return}
   const kind=st.mode==="video"?"video":"audio";
   const tracks=kind==="video"?st.stream.getTracks().filter(t=>t.readyState==="live"):st.stream.getAudioTracks();
@@ -506,24 +542,26 @@ $("recBtn").addEventListener("click",async()=>{
   rec.ondataavailable=e=>{if(e.data.size)parts.push(e.data)};
   rec.onstop=()=>{st.raw=new Blob(parts,{type:rec.mimeType||mime});st.rawKind=kind;stopStream();build()};
   rec.start(1000);
-  recT0=performance.now();st.recording=true;$("guide").classList.add("off");
+  recT0=performance.now();st.recording=true;$("guide").classList.add("off");$("recHint").hidden=true;$("optsRow").hidden=true;$("back1").style.visibility="hidden";
   $("timer").classList.add("live");
-  $("recBtn").disabled=false;$("recBtn").textContent="Aufnahme beenden";
-  tick=setInterval(()=>{
+  $("recBtn").disabled=false;$("recBtn").classList.add("on");$("recBtn").setAttribute("aria-label","Aufnahme beenden");
+  const loop=()=>{
+    if(!st.recording)return;
     const s=(performance.now()-recT0)/1000;
     prompterAt(s);
-    $("timer").textContent=`0:${String(Math.floor(s)).padStart(2,"0")} / 0:${max}`;
-    if(s>=max)finishRec();
-  },100);
+    $("timer").textContent=`0:${String(Math.floor(s)).padStart(2,"0")} / 0:${Math.round(max)}`;
+    if(s>=max){finishRec();return}
+    requestAnimationFrame(loop);
+  };requestAnimationFrame(loop);
 });
 function finishRec(){
   if(!st.recording)return;
-  st.recording=false;clearInterval(tick);st.recDur=(performance.now()-recT0)/1000;
-  $("timer").classList.remove("live");$("recBtn").textContent="Aufnahme starten";$("recBtn").disabled=true;
+  st.recording=false;st.recDur=(performance.now()-recT0)/1000;
+  $("timer").classList.remove("live");$("recBtn").classList.remove("on");$("recBtn").setAttribute("aria-label","Aufnahme starten");$("recBtn").disabled=true;
   if(rec&&rec.state!=="inactive")rec.stop();
 }
 $("demoBtn").addEventListener("click",()=>{st.demo=true;$("fallback").hidden=true;$("recBtn").disabled=false;$("recBtn").click()});
-$("redo").addEventListener("click",()=>$("toRec").click());
+$("redo").addEventListener("click",()=>{$("optsRow").hidden=false;$("back1").style.visibility="visible";$("toRec").click()});
 
 /* ---------- Reel zusammensetzen, in Ruhe nach der Aufnahme ---------- */
 let MB=null;
@@ -550,15 +588,35 @@ async function build(){
     /* Ton: Stimme unverändert, Musik leise darunter */
     const SR=48000;const voice=[];let vEnd=0;
     if(at){for await (const {buffer,timestamp} of new M.AudioBufferSink(at).buffers()){voice.push({buffer,timestamp});vEnd=Math.max(vEnd,timestamp+buffer.duration)}}
-    let dur=Math.min(30,Math.max(vEnd,vt?await vt.computeDuration():0,st.raw?0:st.recDur));
+    let dur=Math.min(34,Math.max(vEnd,vt?await vt.computeDuration():0,st.raw?0:st.recDur));
     if(!dur)dur=st.recDur||targetSec();
     const useMusic=$("musicToggle").checked&&await prerenderMusic();
+    /* Stimme lückenlos aneinanderfügen statt nach Zeitstempeln verteilen (verhindert Aussetzer) */
+    let voiceBuf=null;
+    if(voice.length){
+      const vsr=voice[0].buffer.sampleRate;let len=0;for(const v of voice)len+=v.buffer.length;
+      const mono=new Float32Array(len);let off=0;
+      for(const v of voice){const b=v.buffer,nc=b.numberOfChannels;const c0=b.getChannelData(0);
+        if(nc>1){const c1=b.getChannelData(1);for(let i=0;i<b.length;i++)mono[off+i]=(c0[i]+c1[i])*0.5}else mono.set(c0,off);off+=b.length}
+      /* Lautstärke angleichen: lauter Sprachanteil auf gleiches Niveau, sanft begrenzt */
+      let e=0,cnt=0;const blk=Math.round(vsr*0.02);
+      for(let i=0;i+blk<=len;i+=blk){let s2=0;for(let j=0;j<blk;j++)s2+=mono[i+j]*mono[i+j];const r=Math.sqrt(s2/blk);if(r>0.01){e+=r*r;cnt++}}
+      const rms=cnt?Math.sqrt(e/cnt):0.1;const gain=Math.min(10,Math.max(0.6,0.14/rms));
+      for(let i=0;i<len;i++){const v=mono[i]*gain;mono[i]=Math.tanh(v*1.2)/1.2}
+      voiceBuf=new AudioBuffer({length:len,numberOfChannels:1,sampleRate:vsr});voiceBuf.copyToChannel(mono,0);
+      vEnd=Math.max(vEnd,len/vsr);
+    }
+    dur=Math.min(34,Math.max(dur,voiceBuf?voiceBuf.duration:0));
     let mixed=null;
-    if(voice.length||useMusic){
+    if(voiceBuf||useMusic){
       const oc=new OfflineAudioContext(2,Math.ceil(dur*SR),SR);
-      const t0=voice.length?voice[0].timestamp:0;
-      for(const v of voice){const s=oc.createBufferSource();s.buffer=v.buffer;s.connect(oc.destination);s.start(Math.max(0,v.timestamp-t0))}
-      if(useMusic){const m=oc.createBufferSource();m.buffer=musicBuf;const g=oc.createGain();g.gain.value=voice.length?0.8:1;
+      if(voiceBuf){
+        const s1=oc.createBufferSource();s1.buffer=voiceBuf;
+        const hp=oc.createBiquadFilter();hp.type="highpass";hp.frequency.value=90;
+        const pres=oc.createBiquadFilter();pres.type="peaking";pres.frequency.value=3200;pres.Q.value=0.9;pres.gain.value=4;
+        s1.connect(hp);hp.connect(pres);pres.connect(oc.destination);s1.start(0);
+      }
+      if(useMusic){const m=oc.createBufferSource();m.buffer=musicBuf;const g=oc.createGain();g.gain.value=voiceBuf?0.6:1;
         g.gain.setValueAtTime(g.gain.value,Math.max(0,dur-1));g.gain.linearRampToValueAtTime(0,dur);m.connect(g);g.connect(oc.destination);m.start(0)}
       mixed=await oc.startRendering();
     }
