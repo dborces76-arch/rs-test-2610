@@ -94,7 +94,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <header>
     <div class="eyebrow">BDC · Kampagne ambulante Operation</div>
     <h1>Reel-Studio</h1>
-    <p class="muted">Text ablesen, aufnehmen, prüfen, abschicken. Das Reel entsteht direkt bei der Aufnahme mit BDC-Hintergrund und Untertiteln.</p>
+    <p class="muted">Text ablesen, aufnehmen, prüfen, abschicken. Das Reel entsteht direkt bei der Aufnahme mit BDC-Hintergrund, Untertiteln und leiser Musik.</p>
   </header>
   <p class="proto">Prototyp: Videos werden nicht an den BDC übertragen. Hashtag, Petitionslink, Logo und Einwilligungstexte sind Platzhalter.</p>
 
@@ -149,6 +149,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     </div>
     <video id="src" class="srcvid" playsinline muted autoplay></video>
     <div class="ctrl"><label class="lab" for="tempo">Lesetempo</label><input type="range" id="tempo" min="0.8" max="1.25" step="0.05" value="1"><span class="muted" style="font-size:13px">Links langsamer, rechts schneller</span></div>
+    <label class="toggle" id="musicRow"><input type="checkbox" id="musicToggle" checked>Leise Hintergrundmusik</label>
     <label class="toggle" id="bgToggleRow"><input type="checkbox" id="bgToggle" checked>BDC-Hintergrund statt eigenem Raum</label>
     <div class="btns" id="photoBtns" hidden>
       <button id="snapBtn">Foto aufnehmen</button>
@@ -404,6 +405,7 @@ $("toRec").addEventListener("click",async()=>{
   $("recBtn").disabled=true;
   show(2);
   if(!stimme)initSeg();
+  prerenderMusic();
   await startStream();
 });
 $("back1").addEventListener("click",()=>{stopStream();show(1)});
@@ -477,6 +479,17 @@ function music(ac,out,dur){
   return master;
 }
 
+let musicBuf=null;
+async function prerenderMusic(){
+  if(musicBuf)return musicBuf;
+  try{
+    const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    const oc=new OAC(2,44100*33,44100);
+    music(oc,oc.destination,32);
+    musicBuf=await oc.startRendering();
+  }catch(e){musicBuf=null}
+  return musicBuf;
+}
 /* ---------- Aufnahme in einem Durchgang ---------- */
 let rec=null,parts=[],ac=null,master=null,tick=null;
 $("recBtn").addEventListener("click",async()=>{
@@ -489,7 +502,21 @@ $("recBtn").addEventListener("click",async()=>{
   c.hidden=true;
   const max=parseInt(st.len,10);
   const aTracks=st.stream?st.stream.getAudioTracks().filter(t=>t.readyState==="live"):[];
-  const out=new MediaStream([...cv.captureStream(30).getVideoTracks(),...aTracks]);
+  let audioOut=aTracks;
+  const buf=$("musicToggle").checked?await prerenderMusic():null;
+  if(buf){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      ac=new AC({latencyHint:"playback"});await ac.resume();
+      const dest=ac.createMediaStreamDestination();
+      if(aTracks.length){ac.createMediaStreamSource(new MediaStream(aTracks)).connect(dest)}
+      const src=ac.createBufferSource();src.buffer=buf;
+      master=ac.createGain();master.gain.value=0.9;src.connect(master);master.connect(dest);
+      src.start();
+      audioOut=dest.stream.getAudioTracks();
+    }catch(e){ac=null;master=null;audioOut=aTracks}
+  }
+  const out=new MediaStream([...cv.captureStream(30).getVideoTracks(),...audioOut]);
   const mime=pickMime();st.finalExt=mime.includes("mp4")?"mp4":"webm";
   parts=[];
   rec=new MediaRecorder(out,mime?{mimeType:mime,videoBitsPerSecond:4000000,audioBitsPerSecond:128000}:undefined);
@@ -516,7 +543,8 @@ function finishRec(){
   if(!st.recording)return;
   st.recording=false;clearInterval(tick);$("guide").classList.remove("off");
   $("timer").classList.remove("live");$("recBtn").textContent="Aufnahme starten";$("recBtn").disabled=true;
-  setTimeout(()=>{if(rec&&rec.state!=="inactive")rec.stop()},300);
+  try{if(master){const n=ac.currentTime;master.gain.setValueAtTime(master.gain.value,n);master.gain.linearRampToValueAtTime(0,n+0.5)}}catch(e){}
+  setTimeout(()=>{if(rec&&rec.state!=="inactive")rec.stop();try{if(ac){ac.close();ac=null;master=null}}catch(e){}},600);
 }
 
 $("demoBtn").addEventListener("click",()=>{st.demo=true;$("fallback").hidden=true;$("recBtn").disabled=false;$("recBtn").click()});
