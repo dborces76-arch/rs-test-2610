@@ -44,6 +44,8 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--teal);outline-o
 .choice label:has(input:checked){border-color:var(--accent);background:var(--soft)}
 .choice b{font-family:var(--display);font-size:19px}
 .choice small{color:var(--muted);font-size:13px}
+.choice.three{grid-template-columns:repeat(3,1fr)}
+@media (max-width:480px){.choice.three{grid-template-columns:1fr}}
 button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:13px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
 button.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
 button.rec{background:var(--signal);color:#fff}
@@ -105,7 +107,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <div class="top"><span>BDC</span><span id="mockTag"></span></div>
         <div class="person"></div>
         <div class="tag" id="mockName"></div>
-        <div class="sub"><span>Zur Strafe bleiben Sie jetzt eine Nacht im Krankenhaus.</span></div>
+        <div class="sub"><span id="mockSub"></span></div>
         <div class="bot">Jetzt Petition unterschreiben<br><span style="font-size:15px;font-weight:700" id="mockLink"></span></div>
       </div>
     </div>
@@ -118,18 +120,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div class="field"><label class="lab" for="fMail">E-Mail für Ihr Video</label><input type="email" id="fMail" placeholder="name@praxis.de" autocomplete="email"></div>
     </div>
     <div class="field"><span class="lab">Format</span>
-      <div class="choice">
+      <div class="choice three">
         <label><input type="radio" name="mode" id="mVideo" value="video" checked><b>Eigenes Video</b><small>Sie sprechen in die Kamera</small></label>
-        <label><input type="radio" name="mode" id="mFoto" value="foto"><b>Foto + Stimme</b><small>Foto von Ihnen oder der Praxis</small></label>
+        <label><input type="radio" name="mode" id="mFoto" value="foto"><b>Foto + Stimme</b><small>Foto machen, dann sprechen</small></label>
+        <label><input type="radio" name="mode" id="mStimme" value="stimme"><b>Nur Stimme</b><small>Ihr Name wird eingeblendet</small></label>
       </div>
     </div>
-    <div class="field"><span class="lab">Länge</span>
-      <div class="choice">
-        <label><input type="radio" name="len" id="l30" value="30" checked><b>30 Sekunden</b><small>ausführlich</small></label>
-        <label><input type="radio" name="len" id="l20" value="20"><b>20 Sekunden</b><small>kurz</small></label>
-      </div>
+    <div class="field"><span class="lab">Thema</span>
+      <div class="choice three" id="textChoice"></div>
     </div>
-    <div class="field"><span class="lab">Ihr Text</span><div class="script" id="scriptPreview"></div></div>
+    <div class="field"><span class="lab">Ihr Text, 30 Sekunden</span><div class="script" id="scriptPreview"></div></div>
     <div class="btns"><button id="toRec">Weiter zur Aufnahme</button></div>
   </section>
 
@@ -148,7 +148,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div class="ctrl"><label class="lab" for="tempo">Lesetempo</label><input type="range" id="tempo" min="0.8" max="1.25" step="0.05" value="1"><span class="muted" style="font-size:13px">Links langsamer, rechts schneller</span></div>
     <label class="toggle" id="bgToggleRow"><input type="checkbox" id="bgToggle" checked>BDC-Hintergrund statt eigenem Raum</label>
     <div class="btns" id="photoBtns" hidden>
-      <button class="sec" id="pickPhoto">Foto wählen oder aufnehmen</button>
+      <button id="snapBtn">Foto aufnehmen</button>
+      <button class="sec" id="pickPhoto">Aus Galerie wählen</button>
       <input type="file" id="photoIn" accept="image/*" hidden>
     </div>
     <div class="btns"><button class="rec" id="recBtn">Aufnahme starten</button><button class="sec" id="back1">Zurück</button></div>
@@ -200,7 +201,7 @@ const NAVY="#043659",BLUE="#004576",TEAL="#408C85";
 const $=id=>document.getElementById(id);
 
 const SCRIPTS={
- "30":p=>[
+ t1:{title:"Die Nacht zur Strafe",teaser:"Ambulant operiert, trotzdem über Nacht",lines:p=>[
   {t:"Ihre Operation ist gut verlaufen, es geht Ihnen gut.",hook:1},
   {t:"Zur Strafe bleiben Sie jetzt eine Nacht im Krankenhaus.",hook:1},
   {t:`Ich bin ${p.name}, ${p.fach} in ${p.ort}.`,intro:1},
@@ -209,30 +210,44 @@ const SCRIPTS={
   {t:"Aber genau so ist es ab 2027:"},
   {t:"Nur mit Übernachtung wird Ihre Operation noch ausreichend bezahlt."},
   {t:"Bitte helfen Sie uns, dass Sie nach Hause dürfen, wenn es Ihnen gut geht."},
-  {t:"Unterschreiben Sie die Petition. Der Link ist unten."}],
- "20":p=>[
-  {t:"Ihre OP ist gut verlaufen, es geht Ihnen gut.",hook:1},
-  {t:"Zur Strafe bleiben Sie jetzt eine Nacht im Krankenhaus.",hook:1},
-  {t:"Ich will das nicht. Sie wollen das nicht."},
-  {t:"Kein Mensch will das. Aber ab 2027 ist es so."},
+  {t:"Unterschreiben Sie die Petition. Der Link ist unten."}]},
+ t2:{title:"Der Applaus",teaser:"Corona-Applaus und das Team",lines:p=>[
+  {t:"Erinnern Sie sich an den Applaus in der Corona-Zeit?",hook:1},
+  {t:"Er ist längst verhallt.",hook:1},
   {t:`Ich bin ${p.name}, ${p.fach} in ${p.ort}.`,intro:1},
-  {t:"Bitte unterschreiben Sie die Petition."}]
+  {t:"Zu jeder ambulanten Operation gehört ein ganzes Team:"},
+  {t:"OP-Pflege, Anästhesie, medizinische Fachangestellte."},
+  {t:"Damals hat man ihnen applaudiert."},
+  {t:"Ab 2027 wird genau ihre Arbeit schlechter bezahlt, wenn Sie nach der Operation nach Hause dürfen."},
+  {t:"Applaus bezahlt keine Miete. Und was nichts kostet, ist nichts wert."},
+  {t:"Bitte unterschreiben Sie die Petition. Der Link ist unten."}]},
+ t3:{title:"Investition in Gesundheit",teaser:"Gesundheit statt Schulden",lines:p=>[
+  {t:"Wenn der Staat Schulden macht, heißt es: auf Kosten unserer Kinder.",hook:1},
+  {t:"Bei der Gesundheit ist es umgekehrt.",hook:1},
+  {t:`Ich bin ${p.name}, ${p.fach} in ${p.ort}.`,intro:1},
+  {t:"Wer in Gesundheit investiert, nimmt der nächsten Generation nichts weg."},
+  {t:"Er sorgt dafür, dass Kinder gesund aufwachsen und wir alle länger gesund bleiben."},
+  {t:"Trotzdem wird ab 2027 ausgerechnet bei der ambulanten Operation gespart."},
+  {t:"Das ist keine Frage des Geldes, sondern der Priorität."},
+  {t:"Bitte unterschreiben Sie die Petition. Der Link ist unten."}]}
 };
+$("textChoice").innerHTML=Object.entries(SCRIPTS).map(([k,v],i)=>`<label><input type="radio" name="txt" value="${k}"${i===0?" checked":""}><b>${v.title}</b><small>${v.teaser}</small></label>`).join("");
 
-const st={mode:"video",len:"30",stream:null,photo:null,final:null,finalExt:"mp4",recording:false,demo:false};
+const st={mode:"video",len:"30",text:"t1",stream:null,photo:null,final:null,finalExt:"mp4",recording:false,demo:false};
 
 function person(){return{name:$("fName").value.trim()||"Name",fach:$("fFach").value.trim()||"Fach",ort:$("fOrt").value.trim()||"Ort"}}
-function chunks(){return SCRIPTS[st.len](person())}
-function targetSec(){return st.len==="30"?28:19}
+function chunks(){return SCRIPTS[st.text].lines(person())}
+function targetSec(){return 28}
 function readSec(){return targetSec()/parseFloat($("tempo").value)}
 function esc(s){return s.replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
 
 function renderPreview(){
   $("scriptPreview").innerHTML=chunks().map(x=>`<span class="${x.hook?'hook':''}">${esc(x.t)}</span>`).join(" ");
   const p=person();$("mockName").textContent=`${p.name} · ${p.fach} · ${p.ort}`;
+  const h=chunks().filter(x=>x.hook);$("mockSub").textContent=h[h.length-1].t;
 }
 ["fName","fFach","fOrt"].forEach(id=>$(id).addEventListener("input",renderPreview));
-document.querySelectorAll("input[name=len]").forEach(r=>r.addEventListener("change",()=>{st.len=r.value;renderPreview()}));
+document.querySelectorAll("input[name=txt]").forEach(r=>r.addEventListener("change",()=>{st.text=r.value;renderPreview()}));
 $("mockTag").textContent=HASHTAG;$("mockLink").textContent=PETITION;
 renderPreview();
 
@@ -280,7 +295,8 @@ async function pumpSeg(video){
 
 /* ---------- Zeichnen ---------- */
 const cv=$("cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
-function drawBg(){
+function drawBg(c=ctx){
+  const ctx=c;
   const g=ctx.createRadialGradient(W/2,H*0.25,40,W/2,H*0.35,H*0.85);
   g.addColorStop(0,"#0A5A93");g.addColorStop(0.45,BLUE);g.addColorStop(1,NAVY);
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
@@ -289,7 +305,8 @@ function drawBg(){
   ctx.restore();
 }
 function cover(sw,sh,z=1){const s=Math.max(W/sw,H/sh)*z;const dw=sw*s,dh=sh*s;return[(W-dw)/2,(H-dh)/2,dw,dh]}
-function drawPerson(video){
+function drawPerson(video,c=ctx){
+  const ctx=c;
   const sw=video.videoWidth,sh=video.videoHeight;if(!sw)return;
   const r=cover(sw,sh);
   if($("bgToggle").checked&&segReady&&lastMask){
@@ -321,8 +338,9 @@ function drawOverlay(t){
   ctx.fillStyle="#fff";ctx.textAlign="center";
   ctx.font="800 44px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx.fillText("JETZT PETITION UNTERSCHREIBEN",W/2,H-128);
   ctx.font="700 34px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx.fillText(PETITION,W/2,H-72);
+  if(st.mode==="stimme")drawNameCard();
   const intro=tl.find(x=>x.intro);
-  if(intro&&t>=intro.a-0.2&&t<=intro.b+3){
+  if(st.mode!=="stimme"&&intro&&t>=intro.a-0.2&&t<=intro.b+3){
     ctx.font="700 30px 'Source Sans 3', sans-serif";ctx.textAlign="left";
     const label=`${p.name} · ${p.fach} · ${p.ort}`;const w=ctx.measureText(label).width+36;
     ctx.fillStyle=TEAL;ctx.fillRect(36,H-420,Math.min(w,W-72),56);
@@ -338,13 +356,28 @@ function drawOverlay(t){
       ctx.fillStyle=NAVY;ctx.fillText(ln,W/2,y+2);y+=lh}
   }
 }
+function drawNameCard(){
+  const p=person();
+  ctx.textAlign="center";ctx.textBaseline="top";
+  ctx.fillStyle="rgba(255,255,255,.08)";
+  const y=H*0.24;ctx.fillRect(60,y,W-120,330);
+  ctx.fillStyle=TEAL;ctx.fillRect(60,y,W-120,10);
+  ctx.fillStyle="#fff";
+  ctx.font="800 78px 'Barlow Condensed', 'Arial Narrow', sans-serif";
+  wrapLines(p.name,W-180).slice(0,2).forEach((ln,i)=>ctx.fillText(ln,W/2,y+50+i*82));
+  ctx.font="600 40px 'Source Sans 3', sans-serif";ctx.fillStyle="#CFE3F2";
+  ctx.fillText(p.fach,W/2,y+210,W-160);ctx.fillText(p.ort,W/2,y+262,W-160);
+}
 let recT0=0;
 function frame(){
   const video=$("src");
   const t=st.recording?(performance.now()-recT0)/1000:-1;
   drawBg();
   if(st.mode==="video"&&!st.demo){pumpSeg(video);drawPerson(video)}
-  else if(st.photo){const z=1+0.08*Math.max(0,t)/parseInt(st.len,10);ctx.drawImage(st.photo,...cover(st.photo.naturalWidth,st.photo.naturalHeight,z))}
+  else if(st.mode==="foto"){
+    if(st.photo){const z=1+0.08*Math.max(0,t)/30;const pw=st.photo.naturalWidth||st.photo.width,ph=st.photo.naturalHeight||st.photo.height;ctx.drawImage(st.photo,...cover(pw,ph,z))}
+    else if(st.stream&&st.stream.getVideoTracks().some(x=>x.readyState==="live")){pumpSeg(video);drawPerson(video)}
+  }
   if(st.recording)drawOverlay(t);
   else if(!st.recording)drawOverlay(-1);
   requestAnimationFrame(frame);
@@ -353,17 +386,17 @@ function frame(){
 /* ---------- Kamera ---------- */
 $("toRec").addEventListener("click",async()=>{
   st.mode=document.querySelector("input[name=mode]:checked").value;
-  st.len=document.querySelector("input[name=len]:checked").value;
+  st.text=document.querySelector("input[name=txt]:checked").value;
   st.photo=null;st.demo=false;
   buildTimeline();prompterAt(0);
   $("recErr").hidden=true;$("fallback").hidden=true;
-  const foto=st.mode==="foto";
-  $("recTitle").textContent=foto?"Foto und Stimme":"Aufnahme";
-  $("recHint").textContent=foto?"Wählen Sie zuerst ein Foto. Dann lesen Sie den Text vor, er läuft oben mit.":"Handy hochkant auf Augenhöhe halten. Der Text läuft oben mit, lesen Sie einfach mit. Das Bild zeigt schon das fertige Reel.";
-  $("photoBtns").hidden=!foto;$("bgToggleRow").hidden=foto;
-  $("recBtn").disabled=foto;
+  const foto=st.mode==="foto",stimme=st.mode==="stimme";
+  $("recTitle").textContent=foto?"Foto und Stimme":stimme?"Nur Stimme":"Aufnahme";
+  $("recHint").textContent=foto?"Machen Sie zuerst ein Foto. Dann lesen Sie den Text vor, er läuft oben mit.":stimme?"Ihr Name wird groß eingeblendet. Lesen Sie den Text vor, er läuft oben mit.":"Handy hochkant auf Augenhöhe halten. Der Text läuft oben mit, lesen Sie einfach mit. Das Bild zeigt schon das fertige Reel.";
+  $("photoBtns").hidden=!foto;$("bgToggleRow").hidden=stimme;$("snapBtn").textContent="Foto aufnehmen";
+  $("recBtn").disabled=true;
   show(2);
-  if(!foto)initSeg();
+  if(!stimme)initSeg();
   await startStream();
 });
 $("back1").addEventListener("click",()=>{stopStream();show(1)});
@@ -372,10 +405,11 @@ async function startStream(){
   stopStream();
   try{
     if(!navigator.mediaDevices?.getUserMedia)throw new Error("none");
-    const video=st.mode==="video"?{facingMode:"user",width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30}}:false;
+    const video=st.mode!=="stimme"?{facingMode:"user",width:{ideal:720},height:{ideal:1280},frameRate:{ideal:30}}:false;
     st.stream=await navigator.mediaDevices.getUserMedia({video,audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
     if(video){$("src").srcObject=st.stream;await $("src").play().catch(()=>{})}
-    if(st.mode==="video"){
+    $("recBtn").disabled=st.mode==="foto";
+    if(st.mode!=="stimme"){
       const s=$("segStatus");s.hidden=false;s.textContent=seg?"Hintergrund wird geladen …":"Ohne Hintergrund-Ersetzung";
       const iv=setInterval(()=>{if(segReady){s.textContent="BDC-Hintergrund aktiv";setTimeout(()=>s.hidden=true,1500);clearInterval(iv)}},300);
     }
@@ -388,8 +422,24 @@ function stopStream(){if(st.stream){st.stream.getTracks().forEach(t=>t.stop());s
 $("pickPhoto").addEventListener("click",()=>$("photoIn").click());
 $("photoIn").addEventListener("change",e=>{
   const f=e.target.files[0];if(!f)return;
-  const img=new Image();img.onload=()=>{st.photo=img;$("recBtn").disabled=!st.stream};
+  const img=new Image();img.onload=()=>{st.photo=img;$("recBtn").disabled=!st.stream;if(st.stream)st.stream.getVideoTracks().forEach(t=>t.stop())};
   img.src=URL.createObjectURL(f);
+  $("snapBtn").textContent="Neues Foto aufnehmen";
+});
+$("snapBtn").addEventListener("click",async()=>{
+  if(!st.stream)return;
+  if(st.photo){st.photo=null;$("recBtn").disabled=true;
+    if(!st.stream.getVideoTracks().some(x=>x.readyState==="live")){await startStream()}
+    $("snapBtn").textContent="Foto aufnehmen";return}
+  $("snapBtn").disabled=true;
+  const c=$("count");c.hidden=false;
+  for(const n of [3,2,1]){c.textContent=n;await new Promise(r=>setTimeout(r,700))}
+  c.hidden=true;
+  const snap=document.createElement("canvas");snap.width=W;snap.height=H;const sc=snap.getContext("2d");
+  drawBg(sc);drawPerson($("src"),sc);
+  st.photo=snap;
+  st.stream.getVideoTracks().forEach(t=>t.stop());
+  $("snapBtn").disabled=false;$("snapBtn").textContent="Neues Foto aufnehmen";$("recBtn").disabled=false;
 });
 
 function pickMime(){
