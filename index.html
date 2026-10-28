@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>BDC Reel-Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one narrow phone column, four steps stacked as a guided flow; the reel frame (9:16) is the hero object. */
+:root{
+  --bg:#EEF2F1; --surface:#FFFFFF; --ink:#13232B; --muted:#5A6B70; --line:#D3DCDA;
+  --accent:#1F6B5C; --accent-ink:#FFFFFF; --signal:#C2412D; --soft:#E1ECE8;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1719; --surface:#162326; --ink:#E6EEEC; --muted:#93A6A6; --line:#2A3A3D;
+  --accent:#4FB39C; --accent-ink:#06201A; --signal:#F07A63; --soft:#17302B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1719; --surface:#162326; --ink:#E6EEEC; --muted:#93A6A6; --line:#2A3A3D;
+  --accent:#4FB39C; --accent-ink:#06201A; --signal:#F07A63; --soft:#17302B; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:4px}
+.eyebrow{font-family:var(--display);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px;color:var(--accent)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,8vw,40px);line-height:1.02;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;font-size:24px;margin:0;line-height:1.1}
+p{margin:0}
+.muted{color:var(--muted)}
+.proto{border:1px dashed var(--signal);color:var(--signal);border-radius:8px;padding:8px 12px;font-size:14px}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.04em;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.steps span.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.steps span.done{color:var(--accent);border-color:var(--accent)}
+section.step{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+label.lab{font-weight:600;font-size:14px}
+input[type=text],input[type=email]{font:inherit;padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box}
+input:focus-visible,button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.row{grid-template-columns:1fr}}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice label{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px;cursor:pointer}
+.choice input{position:absolute;opacity:0;pointer-events:none}
+.choice label:has(input:checked){border-color:var(--accent);background:var(--soft)}
+.choice b{font-family:var(--display);font-size:19px}
+.choice small{color:var(--muted);font-size:13px}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:13px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.rec{background:var(--signal);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btns button{flex:1 1 auto}
+.script{background:var(--soft);border-radius:10px;padding:14px;font-size:15px;line-height:1.55}
+.script .hook{font-weight:700}
+/* Reel frame */
+.frame{position:relative;width:100%;max-width:340px;aspect-ratio:9/16;margin:0 auto;border-radius:18px;overflow:hidden;background:#0d1a1d;color:#fff}
+.frame video,.frame img,.frame canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mirror{transform:scaleX(-1)}
+.prompter{position:absolute;left:0;right:0;top:0;padding:14px 14px 40px;background:linear-gradient(#000c,#0000);font-family:var(--body);font-weight:700;font-size:21px;line-height:1.35;max-height:46%;overflow:hidden}
+.prompter .w{color:#ffffff59;transition:color .15s}
+.prompter .w.said{color:#fff}
+.prompter .w.now{color:#FFD9A8}
+.count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:120px;color:#fff;text-shadow:0 4px 30px #0009}
+.timer{position:absolute;right:12px;bottom:12px;font-family:var(--display);font-weight:700;font-size:18px;background:#000a;padding:2px 10px;border-radius:999px;font-variant-numeric:tabular-nums}
+.timer.live::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff4b3a;margin-right:6px;vertical-align:1px}
+.mock{position:absolute;inset:0;background:linear-gradient(160deg,#28505a,#10262b 60%,#0b1a1d)}
+.mock .top{position:absolute;top:0;left:0;right:0;padding:12px 14px;font-family:var(--display);font-weight:700;letter-spacing:.06em;font-size:13px;text-transform:uppercase;display:flex;justify-content:space-between;background:linear-gradient(#000a,#0000)}
+.mock .sub{position:absolute;left:12px;right:12px;bottom:84px;text-align:center}
+.mock .sub span{font-family:var(--display);font-weight:800;font-size:25px;line-height:1.1;background:#fff;color:#13232B;padding:2px 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.mock .tag{position:absolute;left:14px;bottom:150px;font-size:13px;background:#1F6B5C;padding:4px 10px;border-radius:4px;font-weight:700}
+.mock .bot{position:absolute;left:0;right:0;bottom:0;padding:14px;background:#C2412D;font-family:var(--display);font-weight:800;font-size:18px;text-align:center;line-height:1.15}
+.ctrl{display:flex;flex-direction:column;gap:6px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.fallback{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.consent{display:flex;flex-direction:column;gap:10px}
+.consent label{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:15px;line-height:1.45;cursor:pointer}
+.consent input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent)}
+.draft{font-size:12px;font-weight:700;color:var(--signal);letter-spacing:.06em;text-transform:uppercase}
+.done-box{background:var(--soft);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.done-box code{font-size:13px;word-break:break-all}
+.progress{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--accent)}
+.err{color:var(--signal);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">BDC · Kampagne ambulante Operation</div>
+    <h1>Reel-Studio</h1>
+    <p class="muted">Text ablesen, aufnehmen, prüfen, abschicken. Das fertige Reel bekommt automatisch den BDC-Rahmen, Untertitel und leise Musik.</p>
+  </header>
+  <p class="proto">Prototyp: Videos werden nicht an den BDC übertragen. Hashtag, Petitionslink, Logo und Einwilligungstexte sind Platzhalter.</p>
+
+  <nav class="steps" aria-label="Schritte">
+    <span id="st1" class="on">1 Angaben</span><span id="st2">2 Aufnahme</span><span id="st3">3 Prüfen</span><span id="st4">4 Abschicken</span>
+  </nav>
+
+  <!-- STEP 1 -->
+  <section class="step" id="s1">
+    <div class="frame" aria-label="So sieht das fertige Reel aus">
+      <div class="mock">
+        <div class="top"><span>BDC</span><span id="mockTag">#EineNachtZurStrafe</span></div>
+        <div class="tag" id="mockName">Dennis Borces · Chirurg · St. Ingbert</div>
+        <div class="sub"><span>Zur Strafe bleiben Sie jetzt eine Nacht im Krankenhaus.</span></div>
+        <div class="bot">Jetzt Petition unterschreiben<br><span style="font-size:15px;font-weight:700">PETITIONSLINK FOLGT</span></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="lab" for="fName">Name</label><input type="text" id="fName" value="Dennis Borces" autocomplete="name"></div>
+      <div class="field"><label class="lab" for="fFach">Fach</label><input type="text" id="fFach" value="Chirurg"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="lab" for="fOrt">Ort</label><input type="text" id="fOrt" value="St. Ingbert"></div>
+      <div class="field"><label class="lab" for="fMail">E-Mail für Ihr Video</label><input type="email" id="fMail" placeholder="name@praxis.de" autocomplete="email"></div>
+    </div>
+    <div class="field"><span class="lab">Format</span>
+      <div class="choice">
+        <label><input type="radio" name="mode" id="mVideo" value="video" checked><b>Eigenes Video</b><small>Sie sprechen in die Kamera</small></label>
+        <label><input type="radio" name="mode" id="mFoto" value="foto"><b>Foto + Stimme</b><small>Foto von Ihnen oder der Praxis</small></label>
+      </div>
+    </div>
+    <div class="field"><span class="lab">Länge</span>
+      <div class="choice">
+        <label><input type="radio" name="len" id="l30" value="30" checked><b>30 Sekunden</b><small>ausführlich</small></label>
+        <label><input type="radio" name="len" id="l20" value="20"><b>20 Sekunden</b><small>kurz</small></label>
+      </div>
+    </div>
+    <div class="field"><span class="lab">Ihr Text</span><div class="script" id="scriptPreview"></div></div>
+    <div class="btns"><button id="toRec">Weiter zur Aufnahme</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step" id="s2" hidden>
+    <h2 id="recTitle">Aufnahme</h2>
+    <p class="muted" id="recHint">Halten Sie das Handy hochkant auf Augenhöhe. Der Text läuft oben mit, lesen Sie einfach mit.</p>
+    <div class="frame" id="recFrame">
+      <video id="live" class="mirror" playsinline muted autoplay></video>
+      <img id="photoShow" alt="Ihr Foto" hidden>
+      <div class="prompter" id="prompter"></div>
+      <div class="count" id="count" hidden></div>
+      <div class="timer" id="timer">0:00 / 0:30</div>
+    </div>
+    <div class="ctrl"><label class="lab" for="tempo">Lesetempo</label><input type="range" id="tempo" min="0.8" max="1.25" step="0.05" value="1"><span class="muted" style="font-size:13px">Links langsamer, rechts schneller</span></div>
+    <div class="btns" id="photoBtns" hidden>
+      <button class="sec" id="pickPhoto">Foto wählen oder aufnehmen</button>
+      <input type="file" id="photoIn" accept="image/*" hidden>
+    </div>
+    <div class="btns"><button class="rec" id="recBtn">Aufnahme starten</button><button class="sec" id="back1">Zurück</button></div>
+    <p class="err" id="recErr" hidden></p>
+    <div class="fallback" id="fallback" hidden>
+      <b>Kamera hier nicht verfügbar</b>
+      <p class="muted" style="font-size:15px">In dieser Vorschau ist die Kamera gesperrt. Auf der späteren BDC-Seite läuft die Aufnahme direkt im Browser. Zum Testen können Sie eine fertige Aufnahme auswählen oder ein Beispiel-Reel ohne Stimme erzeugen.</p>
+      <div class="btns">
+        <button class="sec" id="pickMedia">Aufnahme auswählen</button>
+        <button class="sec" id="demoBtn">Beispiel-Reel erzeugen</button>
+      </div>
+      <input type="file" id="mediaIn" accept="video/*,audio/*" capture="user" hidden>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step" id="s3" hidden>
+    <h2>Prüfen</h2>
+    <p class="muted" id="buildHint">Das Reel wird mit Rahmen, Untertiteln und Musik zusammengesetzt. Das dauert so lange wie die Aufnahme.</p>
+    <div class="progress" id="prog"><i></i></div>
+    <div class="frame"><canvas id="cv" width="720" height="1280"></canvas><video id="final" playsinline controls hidden></video></div>
+    <div class="btns"><button id="toSend" disabled>Passt, weiter</button><button class="sec" id="redo">Neu aufnehmen</button></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="step" id="s4" hidden>
+    <h2>Abschicken</h2>
+    <div class="draft">Entwurf · endgültige Texte liefert der Justiziar des BDC</div>
+    <div class="consent">
+      <label><input type="checkbox" id="c1"><span>Ich willige ein, dass der BDC dieses Video mit meinem Namen, Fach und Ort auf Instagram, Facebook und der Kampagnenseite veröffentlicht.</span></label>
+      <label><input type="checkbox" id="c2"><span>Ich räume dem BDC die Nutzungsrechte am Video für diese Kampagne ein.</span></label>
+      <label><input type="checkbox" id="c3"><span>Ich habe die Datenschutzhinweise gelesen: Speicherort, Speicherdauer und dass ich meine Einwilligung jederzeit widerrufen kann.</span></label>
+      <label><input type="checkbox" id="c4"><span>Im Video sind keine Patientinnen, Patienten oder Patientendaten zu sehen.</span></label>
+    </div>
+    <div class="btns"><button id="sendBtn" disabled>Abschicken</button><button class="sec" id="back3">Zurück</button></div>
+    <div class="done-box" id="doneBox" hidden>
+      <b>Abgeschickt (Prototyp)</b>
+      <p>In der fertigen Version wird das Video jetzt auf dem BDC-Server gespeichert, Sie erhalten es per E-Mail, und der BDC veröffentlicht alle Videos gemeinsam am Aktionstag.</p>
+      <p>Protokollierte Einwilligung:</p>
+      <code id="consentLog"></code>
+      <div class="btns"><button id="saveBtn">Video auf dem Handy speichern</button></div>
+      <p class="err" id="saveErr" hidden></p>
+    </div>
+  </section>
+</div>
+
+<script>
+(()=>{
+const CONSENT_VERSION="Entwurf 0.1";
+const HASHTAG="#EineNachtZurStrafe";
+const PETITION="PETITIONSLINK FOLGT";
+const $=id=>document.getElementById(id);
+
+const SCRIPTS={
+ "30":p=>[
+  {t:"Ihre Operation ist gut verlaufen, es geht Ihnen gut.",hook:1},
+  {t:"Zur Strafe bleiben Sie jetzt eine Nacht im Krankenhaus.",hook:1},
+  {t:`Ich bin ${p.name}, ${p.fach} in ${p.ort}.`,intro:1},
+  {t:"Ich will das nicht. Sie wollen das nicht."},
+  {t:"Und ich glaube, kein Mensch will, dass Sie länger bleiben als nötig."},
+  {t:"Aber genau so ist es ab 2027:"},
+  {t:"Nur mit Übernachtung wird Ihre Operation noch ausreichend bezahlt."},
+  {t:"Bitte helfen Sie uns, dass Sie nach Hause dürfen, wenn es Ihnen gut geht."},
+  {t:"Unterschreiben Sie die Petition. Der Link ist unten."}],
+ "20":p=>[
+  {t:"Ihre OP ist gut verlaufen, es geht Ihnen gut.",hook:1},
+  {t:"Zur Strafe bleiben Sie jetzt eine Nacht im Krankenhaus.",hook:1},
+  {t:"Ich will das nicht. Sie wollen das nicht."},
+  {t:"Kein Mensch will das. Aber ab 2027 ist es so."},
+  {t:`Ich bin ${p.name}, ${p.fach} in ${p.ort}.`,intro:1},
+  {t:"Bitte unterschreiben Sie die Petition."}]
+};
+
+const st={mode:"video",len:"30",stream:null,rec:null,chunks:[],srcBlob:null,srcKind:null,photo:null,duration:0,final:null,finalExt:"mp4",demo:false};
+
+function person(){return{name:$("fName").value.trim()||"Name",fach:$("fFach").value.trim()||"Fach",ort:$("fOrt").value.trim()||"Ort"}}
+function chunks(){return SCRIPTS[st.len](person())}
+function targetSec(){return st.len==="30"?28:19}
+
+function renderPreview(){
+  const c=chunks();
+  $("scriptPreview").innerHTML=c.map(x=>`<span class="${x.hook?'hook':''}">${esc(x.t)}</span>`).join(" ");
+  const p=person();$("mockName").textContent=`${p.name} · ${p.fach} · ${p.ort}`;
+}
+function esc(s){return s.replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
+["fName","fFach","fOrt"].forEach(id=>$(id).addEventListener("input",renderPreview));
+document.querySelectorAll("input[name=mode]").forEach(r=>r.addEventListener("change",()=>{st.mode=r.value}));
+document.querySelectorAll("input[name=len]").forEach(r=>r.addEventListener("change",()=>{st.len=r.value;renderPreview()}));
+$("mockTag").textContent=HASHTAG;
+renderPreview();
+
+function show(n){
+  for(let i=1;i<=4;i++){$("s"+i).hidden=i!==n;const s=$("st"+i);s.className=i===n?"on":(i<n?"done":"")}
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- Prompter ---------- */
+let words=[];
+function buildPrompter(){
+  const all=chunks().map(c=>c.t).join(" ").split(/\s+/);
+  $("prompter").innerHTML=all.map((w,i)=>`<span class="w" data-i="${i}">${esc(w)}</span>`).join(" ");
+  words=[...$("prompter").querySelectorAll(".w")];
+  $("timer").textContent=`0:00 / 0:${st.len}`;
+}
+function prompterAt(sec){
+  const total=targetSec()/parseFloat($("tempo").value);
+  const k=Math.floor(Math.max(0,sec)/total*words.length);
+  words.forEach((w,i)=>{w.classList.toggle("said",i<k);w.classList.toggle("now",i===k)});
+  const cur=words[Math.min(k,words.length-1)];
+  if(cur){const box=$("prompter");const y=cur.offsetTop-box.clientHeight*0.3;box.scrollTop=Math.max(0,y)}
+}
+
+/* ---------- Step 2 setup ---------- */
+$("toRec").addEventListener("click",async()=>{
+  st.mode=document.querySelector("input[name=mode]:checked").value;
+  st.len=document.querySelector("input[name=len]:checked").value;
+  st.photo=null;st.demo=false;
+  buildPrompter();prompterAt(0);
+  $("recErr").hidden=true;$("fallback").hidden=true;
+  const foto=st.mode==="foto";
+  $("recTitle").textContent=foto?"Foto und Stimme":"Aufnahme";
+  $("recHint").textContent=foto?"Wählen Sie zuerst ein Foto. Dann lesen Sie den Text vor, er läuft oben mit.":"Halten Sie das Handy hochkant auf Augenhöhe. Der Text läuft oben mit, lesen Sie einfach mit.";
+  $("photoBtns").hidden=!foto;$("photoShow").hidden=true;$("live").hidden=foto;
+  $("recBtn").disabled=foto;
+  show(2);
+  await startStream();
+});
+$("back1").addEventListener("click",()=>{stopStream();show(1)});
+
+async function startStream(){
+  stopStream();
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error("none");
+    const video=st.mode==="video"?{facingMode:"user",width:{ideal:720},height:{ideal:1280}}:false;
+    st.stream=await navigator.mediaDevices.getUserMedia({video,audio:{echoCancellation:true,noiseSuppression:true}});
+    if(video){$("live").srcObject=st.stream}
+  }catch(e){
+    st.stream=null;$("fallback").hidden=false;$("recBtn").disabled=true;
+    $("mediaIn").accept=st.mode==="video"?"video/*":"audio/*";
+    $("pickMedia").textContent=st.mode==="video"?"Video auswählen":"Sprachaufnahme auswählen";
+  }
+}
+function stopStream(){if(st.stream){st.stream.getTracks().forEach(t=>t.stop());st.stream=null}}
+
+$("pickPhoto").addEventListener("click",()=>$("photoIn").click());
+$("photoIn").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();img.onload=()=>{st.photo=img;$("photoShow").src=img.src;$("photoShow").hidden=false;$("recBtn").disabled=!st.stream;};
+  img.src=URL.createObjectURL(f);
+});
+
+function pickMime(kind){
+  const list=kind==="video"?["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"]:["audio/mp4","audio/webm;codecs=opus","audio/webm"];
+  for(const m of list){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m))return m}
+  return "";
+}
+
+/* ---------- Recording ---------- */
+let tick=null,t0=0;
+$("recBtn").addEventListener("click",async()=>{
+  if(st.rec&&st.rec.state==="recording"){finishRec();return}
+  if(!st.stream)return;
+  $("recBtn").disabled=true;
+  const c=$("count");c.hidden=false;
+  for(const n of [3,2,1]){c.textContent=n;await new Promise(r=>setTimeout(r,800))}
+  c.hidden=true;
+  const kind=st.mode==="video"?"video":"audio";
+  const mime=pickMime(kind);
+  const tracks=kind==="video"?st.stream.getTracks():st.stream.getAudioTracks();
+  st.chunks=[];
+  st.rec=new MediaRecorder(new MediaStream(tracks),mime?{mimeType:mime}:undefined);
+  st.rec.ondataavailable=e=>{if(e.data.size)st.chunks.push(e.data)};
+  st.rec.onstop=()=>{
+    st.srcBlob=new Blob(st.chunks,{type:st.rec.mimeType||mime});st.srcKind=kind;
+    st.duration=(performance.now()-t0)/1000;
+    toReview();
+  };
+  st.rec.start(250);t0=performance.now();
+  $("timer").classList.add("live");
+  $("recBtn").disabled=false;$("recBtn").textContent="Aufnahme beenden";
+  const max=parseInt(st.len,10);
+  tick=setInterval(()=>{
+    const s=(performance.now()-t0)/1000;
+    prompterAt(s);
+    $("timer").textContent=`0:${String(Math.floor(s)).padStart(2,"0")} / 0:${max}`;
+    if(s>=max)finishRec();
+  },100);
+});
+function finishRec(){
+  clearInterval(tick);$("timer").classList.remove("live");
+  $("recBtn").textContent="Aufnahme starten";
+  if(st.rec&&st.rec.state!=="inactive")st.rec.stop();
+}
+
+/* ---------- Fallback inputs ---------- */
+$("pickMedia").addEventListener("click",()=>{
+  if(st.mode==="foto"&&!st.photo){$("recErr").textContent="Bitte zuerst ein Foto wählen.";$("recErr").hidden=false;return}
+  $("mediaIn").click();
+});
+$("mediaIn").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const kind=f.type.startsWith("video")?"video":"audio";
+  if(st.mode==="video"&&kind!=="video"){$("recErr").textContent="Bitte eine Videodatei wählen.";$("recErr").hidden=false;return}
+  st.srcBlob=f;st.srcKind=kind;st.duration=0;
+  toReview();
+});
+$("demoBtn").addEventListener("click",()=>{st.demo=true;st.srcBlob=null;st.srcKind=null;st.duration=targetSec();toReview()});
+
+/* ---------- Compose reel ---------- */
+function toReview(){
+  stopStream();
+  $("final").hidden=true;$("cv").hidden=false;$("toSend").disabled=true;
+  $("buildHint").textContent="Das Reel wird mit Rahmen, Untertiteln und Musik zusammengesetzt. Das dauert so lange wie die Aufnahme.";
+  show(3);
+  compose().catch(err=>{$("buildHint").textContent="Zusammensetzen hat nicht geklappt: "+(err&&err.message||err)+". Bitte neu aufnehmen.";});
+}
+$("redo").addEventListener("click",()=>{$("toRec").click()});
+
+function wrapLines(ctx,text,maxW){
+  const ws=text.split(" ");const lines=[];let line="";
+  for(const w of ws){const t=line?line+" "+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w}else line=t}
+  if(line)lines.push(line);return lines;
+}
+function timeline(dur){
+  const c=chunks();const n=c.reduce((a,x)=>a+x.t.split(" ").length,0);
+  const lead=0.2,usable=Math.max(1,dur-lead-0.3);let t=lead;
+  return c.map(x=>{const d=usable*x.t.split(" ").length/n;const r={...x,a:t,b:t+d};t+=d;return r});
+}
+
+function music(ctx,dest,dur){
+  // Eigene, lizenzfreie Komposition: ruhige Klavierakkorde a-Moll, F, C, G
+  const master=ctx.createGain();master.gain.value=0.0001;
+  const lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=1800;
+  master.connect(lp);lp.connect(dest);
+  const now=ctx.currentTime+0.05;
+  master.gain.setValueAtTime(0.0001,now);
+  master.gain.exponentialRampToValueAtTime(0.16,now+1.5);
+  master.gain.setValueAtTime(0.16,now+Math.max(1.6,dur-1.6));
+  master.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  const prog=[[57,60,64],[53,57,60],[48,55,64],[55,59,62]];
+  const bar=4;
+  for(let s=0;s<dur;s+=bar){
+    const chord=prog[(s/bar)%prog.length];
+    chord.forEach((m,j)=>note(hz(m),now+s+j*0.12,bar*1.1,0.22));
+    note(hz(chord[0]-12),now+s,bar*1.2,0.28);
+    note(hz(chord[2]+12),now+s+2,1.8,0.10);
+  }
+  function note(f,t,len,v){
+    const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain();
+    o.type="triangle";o.frequency.value=f;o2.type="sine";o2.frequency.value=f*2.001;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+len);
+    const g2=ctx.createGain();g2.gain.value=0.25;
+    o.connect(g);o2.connect(g2);g2.connect(g);g.connect(master);
+    o.start(t);o2.start(t);o.stop(t+len+0.1);o2.stop(t+len+0.1);
+  }
+}
+
+async function compose(){
+  const cv=$("cv"),ctx2=cv.getContext("2d");const W=cv.width,H=cv.height;
+  await document.fonts.ready;
+  const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();await ac.resume();
+  const dest=ac.createMediaStreamDestination();
+  let media=null;
+  if(st.srcBlob){
+    media=document.createElement(st.srcKind==="video"?"video":"audio");
+    media.src=URL.createObjectURL(st.srcBlob);media.playsInline=true;media.preload="auto";
+    await new Promise((res,rej)=>{media.onloadedmetadata=res;media.onerror=()=>rej(new Error("Aufnahme nicht lesbar"))});
+    if(!isFinite(media.duration)){ // Chrome-WebM ohne Dauer
+      media.currentTime=1e6;await Promise.race([new Promise(r=>media.ondurationchange=r),new Promise(r=>setTimeout(r,1500))]);media.currentTime=0;
+    }
+    st.duration=Math.min(parseInt(st.len,10),isFinite(media.duration)&&media.duration>0?media.duration:st.duration||targetSec());
+    const src=ac.createMediaElementSource(media);src.connect(dest);
+  }
+  const dur=st.duration||targetSec();
+  music(ac,dest,dur);
+  const tl=timeline(dur);const p=person();
+
+  const vstream=cv.captureStream(30);
+  const out=new MediaStream([...vstream.getVideoTracks(),...dest.stream.getAudioTracks()]);
+  const mime=pickMime("video");st.finalExt=mime.includes("mp4")?"mp4":"webm";
+  const rec=new MediaRecorder(out,mime?{mimeType:mime,videoBitsPerSecond:3500000}:undefined);
+  const parts=[];rec.ondataavailable=e=>{if(e.data.size)parts.push(e.data)};
+  const done=new Promise(r=>rec.onstop=r);
+
+  function draw(t){
+    // Hintergrund
+    ctx2.fillStyle="#0d1a1d";ctx2.fillRect(0,0,W,H);
+    let srcEl=null,sw=0,sh=0;
+    if(media&&st.srcKind==="video"){srcEl=media;sw=media.videoWidth;sh=media.videoHeight}
+    else if(st.photo){srcEl=st.photo;sw=st.photo.naturalWidth;sh=st.photo.naturalHeight}
+    if(srcEl&&sw){
+      const z=st.srcKind==="video"?1:1+0.08*(t/dur);
+      const s=Math.max(W/sw,H/sh)*z,dw=sw*s,dh=sh*s;
+      ctx2.drawImage(srcEl,(W-dw)/2,(H-dh)/2,dw,dh);
+    }else{
+      const g=ctx2.createLinearGradient(0,0,W*0.6,H);g.addColorStop(0,"#28505a");g.addColorStop(.6,"#10262b");g.addColorStop(1,"#0b1a1d");
+      ctx2.fillStyle=g;ctx2.fillRect(0,0,W,H);
+    }
+    // Kopfband
+    let g=ctx2.createLinearGradient(0,0,0,170);g.addColorStop(0,"rgba(0,0,0,.65)");g.addColorStop(1,"rgba(0,0,0,0)");
+    ctx2.fillStyle=g;ctx2.fillRect(0,0,W,170);
+    ctx2.fillStyle="#fff";ctx2.textBaseline="top";
+    ctx2.font="800 40px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx2.textAlign="left";ctx2.fillText("BDC",36,34);
+    ctx2.font="600 22px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx2.fillText("BERUFSVERBAND DER DEUTSCHEN CHIRURGIE",36,78);
+    ctx2.font="700 30px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx2.textAlign="right";ctx2.fillText(HASHTAG,W-36,40);
+    // Fußband
+    ctx2.fillStyle="#C2412D";ctx2.fillRect(0,H-150,W,150);
+    ctx2.fillStyle="#fff";ctx2.textAlign="center";
+    ctx2.font="800 44px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx2.fillText("JETZT PETITION UNTERSCHREIBEN",W/2,H-128);
+    ctx2.font="700 34px 'Barlow Condensed', 'Arial Narrow', sans-serif";ctx2.fillText(PETITION,W/2,H-72);
+    // Namensband
+    const intro=tl.find(x=>x.intro);
+    if(intro&&t>=intro.a-0.2&&t<=intro.b+3){
+      ctx2.font="700 30px 'Source Sans 3', sans-serif";ctx2.textAlign="left";
+      const label=`${p.name} · ${p.fach} · ${p.ort}`;const w=ctx2.measureText(label).width+36;
+      ctx2.fillStyle="#1F6B5C";ctx2.fillRect(36,H-420,Math.min(w,W-72),56);
+      ctx2.fillStyle="#fff";ctx2.fillText(label,54,H-408,W-108);
+    }
+    // Untertitel
+    const cur=tl.find(x=>t>=x.a&&t<x.b);
+    if(cur){
+      const size=cur.hook?60:52;
+      ctx2.font=`800 ${size}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;ctx2.textAlign="center";
+      const lines=wrapLines(ctx2,cur.t,W-120);const lh=size*1.12;let y=H-190-lines.length*lh;
+      for(const ln of lines){const w=ctx2.measureText(ln).width;
+        ctx2.fillStyle=cur.hook?"#FFD9A8":"#fff";ctx2.fillRect(W/2-w/2-14,y-4,w+28,lh);
+        ctx2.fillStyle="#13232B";ctx2.fillText(ln,W/2,y+2);y+=lh}
+    }
+  }
+
+  draw(0);
+  rec.start(250);
+  const start=performance.now();
+  if(media){media.currentTime=0;await media.play()}
+  await new Promise(res=>{
+    function frame(){
+      const t=media?media.currentTime:(performance.now()-start)/1000;
+      draw(t);
+      $("prog").firstElementChild.style.width=Math.min(100,t/dur*100)+"%";
+      if(t>=dur||(media&&media.ended)){res();return}
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+  if(media)media.pause();
+  await new Promise(r=>setTimeout(r,250));
+  rec.stop();await done;ac.close();
+  st.final=new Blob(parts,{type:rec.mimeType||mime});
+  const fv=$("final");fv.src=URL.createObjectURL(st.final);fv.hidden=false;$("cv").hidden=true;
+  $("buildHint").textContent=st.demo?"Beispiel-Reel ohne Stimme. Mit eigener Aufnahme liegt Ihre Stimme über der Musik.":"Schauen Sie sich Ihr Reel an. Passt es, geht es weiter.";
+  $("toSend").disabled=false;
+}
+
+/* ---------- Step 4 ---------- */
+$("toSend").addEventListener("click",()=>{["c1","c2","c3","c4"].forEach(id=>$(id).checked=false);$("sendBtn").disabled=true;$("doneBox").hidden=true;show(4)});
+$("back3").addEventListener("click",()=>show(3));
+["c1","c2","c3","c4"].forEach(id=>$(id).addEventListener("change",()=>{
+  $("sendBtn").disabled=!["c1","c2","c3","c4"].every(i=>$(i).checked);
+}));
+$("sendBtn").addEventListener("click",()=>{
+  const p=person();
+  const log={zeitpunkt:new Date().toISOString(),einwilligungstext:CONSENT_VERSION,name:p.name,fach:p.fach,ort:p.ort,email:$("fMail").value.trim()||"(nicht angegeben)",veroeffentlichung:true,nutzungsrechte:true,datenschutz:true,keinePatienten:true};
+  $("consentLog").textContent=JSON.stringify(log);
+  $("doneBox").hidden=false;$("sendBtn").disabled=true;
+});
+$("saveBtn").addEventListener("click",async()=>{
+  $("saveErr").hidden=true;
+  const name=`BDC-Reel-${person().name.replace(/\s+/g,"-")}.${st.finalExt}`;
+  let dl=null;
+  try{dl=window.claude?.use?await window.claude.use("downloads"):null}catch(e){dl=null}
+  if(dl){
+    try{await dl.save({filename:name,data:st.final})}
+    catch(e){if(e&&e.code!=="declined"){$("saveErr").textContent="Speichern ist in dieser Ansicht nicht möglich.";$("saveErr").hidden=false}}
+    return;
+  }
+  const a=document.createElement("a");a.href=URL.createObjectURL(st.final);a.download=name;document.body.appendChild(a);a.click();a.remove();
+});
+})();
+</script>
+
+</body></html>
